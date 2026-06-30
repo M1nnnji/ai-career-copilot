@@ -2,7 +2,9 @@
 Kafka 이벤트 발행 — HTTP API에서 입력을 토픽으로 전달.
 에이전트 handler에서 다음 단계 토픽 발행 시에도 사용.
 """
+import json
 
+from confluent_kafka import Producer
 import logging
 from typing import Any
 
@@ -17,18 +19,31 @@ _producer = None
 def get_producer():
     """Kafka Producer 인스턴스 반환 (lazy init)."""
     global _producer
+
     if _producer is None:
-        # TODO: Producer({"bootstrap.servers": settings.kafka_bootstrap_servers})
-        logger.warning("Kafka producer not initialized — TODO")
+        _producer = Producer(
+            {
+                "bootstrap.servers": settings.kafka_bootstrap_servers,
+            }
+        )
+
     return _producer
 
 
 def publish(topic: str, key: str, value: dict[str, Any]) -> None:
-    """공통 발행 함수 — key는 session_id(submission UUID)."""
-    # TODO: producer.produce(topic, key=key, value=json.dumps(value))
-    # TODO: producer.flush()
-    logger.info("TODO publish → topic=%s key=%s", topic, key)
+    """공통 발행 함수"""
 
+    producer = get_producer()
+
+    producer.produce(
+        topic=topic,
+        key=key,
+        value=json.dumps(value,  ensure_ascii=False),
+    )
+
+    producer.flush()
+
+    logger.info("Published → topic=%s key=%s", topic, key)
 
 # --- 토픽별 편의 함수 ---
 
