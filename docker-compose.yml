@@ -1,0 +1,88 @@
+# 전체 스택을 한 번에 기동 (Zookeeper + Kafka + Kafka UI + Postgres + API + Worker + Web)
+# Kafka 토픽 생성: docker-compose up 후 수동 실행 → ./kafka/init-topics.sh
+# TODO: healthcheck 연동 (kafka, postgres, api, worker 등)
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  # Kafka — 에이전트 간 이벤트 메시지 브로커 (job/resume/fit/coverletter 토픽)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    # TODO: healthcheck 추가
+
+  # Kafka UI — 토픽·메시지·컨슈머 그룹 시각적 확인 (개발/디버깅용)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    # TODO: healthcheck 추가
+
+  # PostgreSQL — submission 세션 및 단계별 분석 결과 영속 저장
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-career}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-career}
+      POSTGRES_DB: ${POSTGRES_DB:-career_copilot}
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # TODO: healthcheck 추가
+
+  # API — FastAPI HTTP 서버: 사용자 입력 수신, DB 저장, Kafka produce, 결과 조회
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+      - postgres
+    volumes:
+      - ./backend:/app
+    # TODO: healthcheck 추가
+
+  # Worker — Kafka consumer 프로세스: 4개 에이전트(Job/Resume/Fit/CoverLetter) 실행
+  worker:
+    build: ./backend
+    command: python run_worker.py
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+      - postgres
+    volumes:
+      - ./backend:/app
+    # TODO: healthcheck 추가
+
+  web:
+    build: ./web
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app
+      - /app/node_modules
