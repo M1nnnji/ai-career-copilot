@@ -1,8 +1,9 @@
 #!/bin/bash
+set -e
 # Kafka 토픽 생성 스크립트 (D1: docker-compose 기동 후 1회 실행)
 # TODO: kafka 컨테이너에서 실행 — ./kafka/init-topics.sh
 
-BOOTSTRAP="${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
+BOOTSTRAP="${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"
 
 TOPICS=(
   "job.submitted"
@@ -20,5 +21,6 @@ for topic in "${TOPICS[@]}"; do
     --topic "$topic" \
     --partitions 3 \
     --replication-factor 1
-  echo "Created (or exists): $topic"
+  echo "Creating Kafka topics..."
+  echo "✅ Kafka topics initialized."
 done

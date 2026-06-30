@@ -22,6 +22,21 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     # TODO: healthcheck 추가
 
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - kafka
+    volumes:
+      - ./kafka:/scripts
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    entrypoint: >
+      bash -c "
+        echo 'Waiting for Kafka...' &&
+        sleep 15 &&
+        bash /scripts/init-topics.sh
+      "
+
   # Kafka UI — 토픽·메시지·컨슈머 그룹 시각적 확인 (개발/디버깅용)
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -80,7 +95,7 @@ services:
   web:
     build: ./web
     ports:
-      - "5173:5173"
+      - "5174:5173"
     depends_on:
       - api
     volumes:
