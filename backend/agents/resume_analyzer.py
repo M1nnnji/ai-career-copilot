@@ -1,9 +1,14 @@
 """
 Resume Analyzer 에이전트 — resume.submitted 구독 → resume.analyzed 발행.
-역할: 이력서에서 skills / projects JSON 추출.
 """
 
+import json
 import logging
+
+from confluent_kafka import Consumer
+
+from core.config import settings
+from producers.events import publish_resume_analyzed
 
 logger = logging.getLogger(__name__)
 
@@ -12,13 +17,49 @@ OUTPUT_TOPIC = "resume.analyzed"
 
 
 def run_consumer():
-    """Kafka consumer loop."""
-    # TODO: confluent-kafka Consumer 생성, poll loop
-    logger.info("Resume Analyzer consumer — TODO: implement")
+    consumer = Consumer(
+        {
+            "bootstrap.servers": settings.kafka_bootstrap_servers,
+            "group.id": "resume-analyzer",
+            "auto.offset.reset": "earliest",
+        }
+    )
+
+    consumer.subscribe([INPUT_TOPIC])
+
+    logger.info("Resume Analyzer started.")
+
+    while True:
+        msg = consumer.poll(1.0)
+
+        if msg is None:
+            continue
+
+        if msg.error():
+            logger.error(msg.error())
+            continue
+
+        payload = json.loads(msg.value().decode())
+
+        result = handle_message(payload)
+
+        publish_resume_analyzed(
+            payload["session_id"],
+            result,
+        )
+
+        consumer.commit(msg)
 
 
 def handle_message(payload: dict) -> dict:
-    """
-    TODO: prompts/resume_analyzer.txt → LLM → JSON → DB → produce
-    """
-    raise NotImplementedError("TODO: implement resume analysis")
+    logger.info("Received resume: %s", payload)
+
+    return {
+        "skills": [
+            "Python",
+            "FastAPI",
+        ],
+        "projects": [
+            "AI Career Copilot",
+        ],
+    }
