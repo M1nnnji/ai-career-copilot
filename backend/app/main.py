@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.test_llm import router as test_router
 from app.routes import router
 
 app = FastAPI(
@@ -11,7 +12,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# TODO: web 서비스 origin을 환경변수로 분리
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -21,3 +21,4 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(test_router)

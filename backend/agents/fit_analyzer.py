@@ -1,5 +1,6 @@
 """
-Fit Analyzer 에이전트 — job.analyzed + resume.analyzed 조인 → fit.analyzed 발행.
+Fit Analyzer 에이전트
+job.analyzed + resume.analyzed → fit.analyzed
 """
 
 import json
@@ -9,13 +10,15 @@ from typing import Dict
 from confluent_kafka import Consumer
 
 from core.config import settings
+from core.llm import call_llm_json, load_prompt
 from producers.events import publish_fit_analyzed
 
 logger = logging.getLogger(__name__)
 
-INPUT_TOPICS = ("job.analyzed", "resume.analyzed")
+INPUT_TOPICS = ["job.analyzed", "resume.analyzed"]
 OUTPUT_TOPIC = "fit.analyzed"
 
+# session_id별 임시 저장
 _join_store: Dict[str, dict] = {}
 
 
@@ -28,7 +31,7 @@ def run_consumer():
         }
     )
 
-    consumer.subscribe(list(INPUT_TOPICS))
+    consumer.subscribe(INPUT_TOPICS)
 
     logger.info("Fit Analyzer started.")
 
@@ -44,47 +47,66 @@ def run_consumer():
 
         payload = json.loads(msg.value().decode())
 
-        session_id = payload["session_id"]
+        try:
+            topic = msg.topic()
 
-        if msg.topic() == "job.analyzed":
-            handle_partial(session_id, "job", payload)
+            if topic == "job.analyzed":
+                handle_partial(
+                    payload["session_id"],
+                    "job",
+                    payload,
+                )
 
-        elif msg.topic() == "resume.analyzed":
-            handle_partial(session_id, "resume", payload)
+            elif topic == "resume.analyzed":
+                handle_partial(
+                    payload["session_id"],
+                    "resume",
+                    payload,
+                )
 
-        consumer.commit(msg)
+            consumer.commit(msg)
+
+        except Exception:
+            logger.exception("Fit Analyzer failed")
 
 
-def handle_partial(session_id: str, stage: str, data: dict) -> None:
-    _join_store.setdefault(session_id, {})[stage] = data
+def handle_partial(session_id: str, stage: str, data: dict):
+    store = _join_store.setdefault(session_id, {})
+    store[stage] = data
 
-    if "job" not in _join_store[session_id]:
-        return
+    if "job" in store and "resume" in store:
+        logger.info("Both results ready: %s", session_id)
 
-    if "resume" not in _join_store[session_id]:
-        return
+        result = handle_joined(
+            session_id,
+            store["job"],
+            store["resume"],
+        )
 
-    result = handle_joined(
-        session_id,
-        _join_store[session_id]["job"],
-        _join_store[session_id]["resume"],
-    )
+        publish_fit_analyzed(
+            session_id,
+            result,
+        )
 
-    publish_fit_analyzed(session_id, result)
-
-    _join_store.pop(session_id, None)
+        del _join_store[session_id]
 
 
 def handle_joined(session_id: str, job_data: dict, resume_data: dict) -> dict:
-    logger.info("Both results ready: %s", session_id)
+    prompt = load_prompt("fit_analyzer")
 
-    return {
-        "fit_score": 85,
-        "strengths": [
-            "Python",
-            "FastAPI",
-        ],
-        "gaps": [
-            "Docker",
-        ],
-    }
+    user_message = f"""
+Job Analysis:
+{job_data}
+
+Resume Analysis:
+{resume_data}
+"""
+
+    result = call_llm_json(
+        prompt,
+        user_message,
+    )
+
+    logger.info("LLM Result: %s", result)
+
+    return result

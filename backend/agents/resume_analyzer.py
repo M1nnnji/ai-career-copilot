@@ -8,6 +8,7 @@ import logging
 from confluent_kafka import Consumer
 
 from core.config import settings
+from core.llm import call_llm_json, load_prompt
 from producers.events import publish_resume_analyzed
 
 logger = logging.getLogger(__name__)
@@ -41,25 +42,30 @@ def run_consumer():
 
         payload = json.loads(msg.value().decode())
 
-        result = handle_message(payload)
+        try:
+            result = handle_message(payload)
 
-        publish_resume_analyzed(
-            payload["session_id"],
-            result,
-        )
+            publish_resume_analyzed(
+                payload["session_id"],
+                result,
+            )
 
-        consumer.commit(msg)
+            consumer.commit(msg)
+
+        except Exception:
+            logger.exception("Resume Analyzer failed")
 
 
 def handle_message(payload: dict) -> dict:
     logger.info("Received resume: %s", payload)
 
-    return {
-        "skills": [
-            "Python",
-            "FastAPI",
-        ],
-        "projects": [
-            "AI Career Copilot",
-        ],
-    }
+    prompt = load_prompt("resume_analyzer")
+
+    result = call_llm_json(
+        prompt,
+        payload["resume_text"],
+    )
+
+    logger.info("LLM Result: %s", result)
+
+    return result
