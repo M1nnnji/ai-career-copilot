@@ -42,12 +42,18 @@ class FitAnalyzedResult(BaseModel):
 class CoverLetterScores(BaseModel):
     structure: int = 0
     clarity: int = 0
-    fit: int = 0
+    job_fit: int = 0
+
+
+class CoverLetterIssue(BaseModel):
+    type: str = ""
+    description: str = ""
+    suggestion: str = ""
 
 
 class CoverLetterDoneResult(BaseModel):
     scores: CoverLetterScores = Field(default_factory=CoverLetterScores)
-    issues: list[str] = Field(default_factory=list)
+    issues: list[CoverLetterIssue] = Field(default_factory=list)
     revised: str = ""
 
 

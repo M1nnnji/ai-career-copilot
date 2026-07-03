@@ -11,6 +11,7 @@ from confluent_kafka import Consumer
 
 from core.config import settings
 from core.llm import call_llm_json, load_prompt
+from core.result_store import save_result
 from producers.events import publish_fit_analyzed
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,8 @@ def handle_partial(
         store["job"],
         store["resume"],
     )
+
+    save_result(session_id, "fit", result)
 
     publish_fit_analyzed(
         session_id,

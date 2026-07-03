@@ -17,18 +17,30 @@ export default function ResultPage() {
   useEffect(() => {
     if (!submissionId) return;
 
-    // TODO: status === "complete" 될 때까지 2~3초 간격 polling
+    let timer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
+    // completed가 될 때까지 2.5초 간격으로 폴링.
     const poll = async () => {
       try {
         const data = await getResults(submissionId);
+        if (cancelled) return;
         setResult(data);
-        // TODO: complete가 아니면 setInterval로 재호출
+        if (data.status !== "completed") {
+          timer = setTimeout(poll, 2500);
+        }
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : "조회 실패");
       }
     };
 
     poll();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [submissionId]);
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
@@ -49,6 +61,7 @@ export default function ResultPage() {
           original="" // TODO: API에서 원문 반환 또는 별도 필드 추가
           revised={result.coverletter.revised}
           issues={result.coverletter.issues}
+          scores={result.coverletter.scores}
         />
       )}
     </div>

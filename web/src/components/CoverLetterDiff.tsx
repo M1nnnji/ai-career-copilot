@@ -1,24 +1,41 @@
 /**
- * 자소서 첨삭 전후 비교 — issues + revised 문단.
+ * 자소서 첨삭 결과 — 점수 + issues(개선 포인트) + revised 개선안.
  */
+import type { CoverLetterIssue, CoverLetterScores } from "../types";
+
 interface Props {
   original: string;
   revised: string;
-  issues: string[];
+  issues: CoverLetterIssue[];
+  scores?: CoverLetterScores;
 }
 
-export default function CoverLetterDiff({ original, revised, issues }: Props) {
-  // TODO: D6에서 side-by-side diff UI
+export default function CoverLetterDiff({ original, revised, issues, scores }: Props) {
   return (
     <section>
       <h2>자소서 첨삭</h2>
+
+      {scores && (
+        <ul>
+          <li>구조: {scores.structure} / 5</li>
+          <li>명료성: {scores.clarity} / 5</li>
+          <li>직무 적합: {scores.job_fit} / 5</li>
+        </ul>
+      )}
 
       {issues.length > 0 && (
         <div>
           <h3>개선 포인트</h3>
           <ul>
             {issues.map((issue, i) => (
-              <li key={i}>{issue}</li>
+              <li key={i}>
+                <strong>{issue.type}</strong>: {issue.description}
+                {issue.suggestion && (
+                  <div>
+                    <em>제안: {issue.suggestion}</em>
+                  </div>
+                )}
+              </li>
             ))}
           </ul>
         </div>
@@ -33,7 +50,7 @@ export default function CoverLetterDiff({ original, revised, issues }: Props) {
 
       <div>
         <h3>개선안</h3>
-        <p>{revised || "—"}</p>
+        <p style={{ whiteSpace: "pre-wrap" }}>{revised || "—"}</p>
       </div>
     </section>
   );

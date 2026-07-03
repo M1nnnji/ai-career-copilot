@@ -98,14 +98,7 @@ def handle_partial(
 
     logger.info("Saving result...")
 
-    save_result(
-        session_id,
-        "result",
-        {
-            "fit": store["fit"],
-            "coverletter": result,
-        },
-    )
+    save_result(session_id, "coverletter", result)
 
     publish_coverletter_done(
         session_id,

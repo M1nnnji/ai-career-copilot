@@ -3,7 +3,8 @@
  */
 
 export interface SubmissionCreate {
-  job_text: string;
+  job_text?: string;
+  job_url?: string;
   resume_text: string;
   cover_question: string;
   cover_draft: string;
@@ -34,12 +35,18 @@ export interface FitAnalyzedResult {
 export interface CoverLetterScores {
   structure: number;
   clarity: number;
-  fit: number;
+  job_fit: number;
+}
+
+export interface CoverLetterIssue {
+  type: string;
+  description: string;
+  suggestion: string;
 }
 
 export interface CoverLetterDoneResult {
   scores: CoverLetterScores;
-  issues: string[];
+  issues: CoverLetterIssue[];
   revised: string;
 }
 

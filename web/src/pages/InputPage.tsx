@@ -7,6 +7,7 @@ import { createSubmission } from "../api/client";
 
 export default function InputPage() {
   const navigate = useNavigate();
+  const [jobUrl, setJobUrl] = useState("");
   const [jobText, setJobText] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [coverQuestion, setCoverQuestion] = useState("");
@@ -16,13 +17,23 @@ export default function InputPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 공고는 URL 또는 텍스트 중 하나 필수.
+    if (!jobUrl.trim() && !jobText.trim()) {
+      setError("채용공고 URL 또는 텍스트 중 하나는 입력해야 합니다.");
+      return;
+    }
+    if (!resumeText.trim() || !coverQuestion.trim() || !coverDraft.trim()) {
+      setError("이력서 · 자소서 문항 · 자소서 초안을 모두 입력해주세요.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // TODO: 입력 유효성 검사 (빈 값 방지)
       const res = await createSubmission({
-        job_text: jobText,
+        ...(jobUrl.trim() ? { job_url: jobUrl.trim() } : { job_text: jobText }),
         resume_text: resumeText,
         cover_question: coverQuestion,
         cover_draft: coverDraft,
@@ -43,11 +54,19 @@ export default function InputPage() {
       <form onSubmit={handleSubmit}>
         <fieldset>
           <legend>채용공고</legend>
+          <input
+            type="url"
+            value={jobUrl}
+            onChange={(e) => setJobUrl(e.target.value)}
+            placeholder="채용공고 URL (입력 시 자동 크롤링)"
+            style={{ width: "100%", marginBottom: 8 }}
+          />
           <textarea
             rows={6}
             value={jobText}
             onChange={(e) => setJobText(e.target.value)}
-            placeholder="채용공고 텍스트를 붙여넣으세요"
+            placeholder="또는 채용공고 텍스트를 직접 붙여넣으세요"
+            disabled={!!jobUrl.trim()}
           />
         </fieldset>
 

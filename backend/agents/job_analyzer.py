@@ -10,6 +10,7 @@ from confluent_kafka import Consumer
 
 from core.config import settings
 from core.llm import call_llm_json, load_prompt
+from core.result_store import save_result
 from producers.events import publish_job_analyzed
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,8 @@ def run_consumer():
             payload = json.loads(msg.value().decode())
 
             result = handle_message(payload)
+
+            save_result(payload["session_id"], "job", result)
 
             publish_job_analyzed(
                 payload["session_id"],

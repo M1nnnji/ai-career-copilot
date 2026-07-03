@@ -105,18 +105,16 @@ def get_results(submission_id: UUID):
     메모리에 저장된 분석 결과 조회
     """
 
-    logger.info("GET RESULT CALLED")
+    stages = get_result(str(submission_id)) or {}
 
-    result = get_result(str(submission_id))
-
-    logger.info("RESULT = %s", result)
-
-    if result is None:
-        return {
-            "status": "processing",
-        }
+    # 자소서 첨삭까지 끝나면 완료, 아니면 아직 파이프라인 진행 중.
+    status = "completed" if "coverletter" in stages else "processing"
 
     return {
-        "status": "completed",
-        "result": result,
+        "id": str(submission_id),
+        "status": status,
+        "job": stages.get("job"),
+        "resume": stages.get("resume"),
+        "fit": stages.get("fit"),
+        "coverletter": stages.get("coverletter"),
     }
