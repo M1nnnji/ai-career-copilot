@@ -15,7 +15,7 @@ from confluent_kafka import Consumer
 
 from core.config import settings
 from core.llm import call_llm_json, load_prompt
-from core.result_store import save_result
+from core.result_store import mark_status, save_error, save_result
 from producers.events import publish_coverletter_done
 
 logger = logging.getLogger(__name__)
@@ -69,8 +69,11 @@ def run_consumer():
 
             consumer.commit(msg)
 
-        except Exception:
+        except Exception as e:
             logger.exception("Cover Letter Editor failed")
+            if payload.get("session_id"):
+                save_error(payload["session_id"], "coverletter", str(e))
+            consumer.commit(msg)
 
 
 def _ready(store: dict) -> bool:
@@ -105,6 +108,7 @@ def handle_partial(session_id: str, stage: str, data: dict):
     logger.info("Saving %d cover letter result(s)...", len(results))
 
     save_result(session_id, "coverletter", results)
+    mark_status(session_id, "completed")
 
     publish_coverletter_done(session_id, {"coverletters": results})
 

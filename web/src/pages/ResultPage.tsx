@@ -26,7 +26,8 @@ export default function ResultPage() {
         const data = await getResults(submissionId);
         if (cancelled) return;
         setResult(data);
-        if (data.status !== "completed") {
+        // 완료·실패 전까지 계속 폴링.
+        if (data.status !== "completed" && data.status !== "failed") {
           timer = setTimeout(poll, 2500);
         }
       } catch (err) {
@@ -51,6 +52,22 @@ export default function ResultPage() {
       <h1>분석 결과</h1>
       <p>세션 ID: {result.id}</p>
       <p>상태: {result.status}</p>
+
+      {result.status === "failed" && result.error && (
+        <div
+          style={{
+            border: "1px solid #e00",
+            background: "#fee",
+            borderRadius: 6,
+            padding: 12,
+            marginBottom: 12,
+            color: "#900",
+          }}
+        >
+          <strong>분석 실패 ({result.error.stage} 단계)</strong>
+          <p style={{ margin: "4px 0 0" }}>{result.error.message}</p>
+        </div>
+      )}
 
       <PipelineStatus status={result.status} result={result} />
 

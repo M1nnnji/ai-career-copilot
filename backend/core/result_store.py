@@ -12,7 +12,7 @@ import uuid
 from sqlalchemy import select
 
 from core.database import SessionLocal
-from models.session import AnalysisResult
+from models.session import AnalysisResult, Submission
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +57,20 @@ def get_result(session_id):
 
     # 같은 stage가 여러 번 저장됐다면 created_at 오름차순 순회로 최신값이 남는다.
     return {row.stage: row.result_json for row in rows}
+
+
+def mark_status(session_id, status: str) -> None:
+    """submissions.status 갱신 (completed / failed 등)."""
+    with SessionLocal() as db:
+        sub = db.get(Submission, _to_uuid(session_id))
+        if sub is not None:
+            sub.status = status
+            db.commit()
+
+    logger.info("Status → %s: session=%s", status, session_id)
+
+
+def save_error(session_id, stage: str, message: str) -> None:
+    """에이전트 실패 기록 — error 단계로 저장하고 상태를 failed로 표시."""
+    save_result(session_id, "error", {"stage": stage, "message": message})
+    mark_status(session_id, "failed")

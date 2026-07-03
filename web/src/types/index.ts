@@ -55,13 +55,19 @@ export interface CoverLetterDoneResult {
   revised: string;
 }
 
+export interface SubmissionError {
+  stage: string;
+  message: string;
+}
+
 export interface ResultResponse {
   id: string;
-  status: string;
+  status: string; // processing | completed | failed
   job?: JobAnalyzedResult;
   resume?: ResumeAnalyzedResult;
   fit?: FitAnalyzedResult;
   coverletters: CoverLetterDoneResult[];
+  error?: SubmissionError | null;
 }
 
 /** Kafka 파이프라인 단계 — PipelineStatus 컴포넌트용 */

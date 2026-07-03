@@ -109,8 +109,13 @@ def get_results(submission_id: UUID):
 
     stages = get_result(str(submission_id)) or {}
 
-    # 자소서 첨삭까지 끝나면 완료, 아니면 아직 파이프라인 진행 중.
-    status = "completed" if "coverletter" in stages else "processing"
+    # error 기록이 있으면 실패, 자소서 첨삭까지 끝나면 완료, 아니면 진행 중.
+    if "error" in stages:
+        status = "failed"
+    elif "coverletter" in stages:
+        status = "completed"
+    else:
+        status = "processing"
 
     return {
         "id": str(submission_id),
@@ -119,4 +124,5 @@ def get_results(submission_id: UUID):
         "resume": stages.get("resume"),
         "fit": stages.get("fit"),
         "coverletters": stages.get("coverletter") or [],
+        "error": stages.get("error"),
     }

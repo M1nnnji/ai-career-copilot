@@ -10,7 +10,7 @@ from confluent_kafka import Consumer
 
 from core.config import settings
 from core.llm import call_llm_json, load_prompt
-from core.result_store import save_result
+from core.result_store import save_error, save_result
 from producers.events import publish_job_analyzed
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ def run_consumer():
             logger.error(msg.error())
             continue
 
+        payload = {}
         try:
             payload = json.loads(msg.value().decode())
 
@@ -56,8 +57,11 @@ def run_consumer():
 
             consumer.commit(msg)
 
-        except Exception:
+        except Exception as e:
             logger.exception("Job Analyzer failed")
+            if payload.get("session_id"):
+                save_error(payload["session_id"], "job", str(e))
+            consumer.commit(msg)
 
 
 def handle_message(payload: dict) -> dict:

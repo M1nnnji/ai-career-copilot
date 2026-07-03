@@ -78,10 +78,16 @@ class SubmissionResponse(BaseModel):
     created_at: datetime
 
 
+class SubmissionError(BaseModel):
+    stage: str = ""
+    message: str = ""
+
+
 class ResultResponse(BaseModel):
     id: UUID
-    status: str
+    status: str  # processing | completed | failed
     job: Optional[JobAnalyzedResult] = None
     resume: Optional[ResumeAnalyzedResult] = None
     fit: Optional[FitAnalyzedResult] = None
     coverletters: list[CoverLetterDoneResult] = Field(default_factory=list)
+    error: Optional[SubmissionError] = None
