@@ -1,39 +1,59 @@
 """
-메모리 기반 결과 저장소 (MVP)
+결과 저장소 — PostgreSQL 기반.
+
+API(uvicorn)와 Worker(run_worker)가 서로 다른 프로세스이므로
+in-memory dict로는 결과를 공유할 수 없다. analysis_results 테이블에 저장해
+양쪽이 같은 데이터를 보게 한다.
 """
 
 import logging
-from typing import Dict
+import uuid
+
+from sqlalchemy import select
+
+from core.database import SessionLocal
+from models.session import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-_results: Dict[str, dict] = {}
+
+def _to_uuid(session_id) -> uuid.UUID:
+    return session_id if isinstance(session_id, uuid.UUID) else uuid.UUID(str(session_id))
 
 
-def save_result(
-    session_id: str,
-    stage: str,
-    result: dict,
-):
+def save_result(session_id, stage: str, result: dict) -> None:
+    """단계별 결과를 analysis_results 테이블에 저장."""
+    with SessionLocal() as db:
+        db.add(
+            AnalysisResult(
+                submission_id=_to_uuid(session_id),
+                stage=stage,
+                result_json=result,
+            )
+        )
+        db.commit()
+
+    logger.info("Saved result: session=%s stage=%s", session_id, stage)
+
+
+def get_result(session_id):
     """
-    결과 저장
+    세션의 모든 단계 결과를 {stage: result_json} 형태로 반환.
+    결과가 하나도 없으면 None (→ 아직 processing).
     """
-    _results.setdefault(session_id, {})
-    _results[session_id][stage] = result
+    with SessionLocal() as db:
+        rows = (
+            db.execute(
+                select(AnalysisResult)
+                .where(AnalysisResult.submission_id == _to_uuid(session_id))
+                .order_by(AnalysisResult.created_at)
+            )
+            .scalars()
+            .all()
+        )
 
-    logger.info(
-        "Saved Result Store: %s",
-        _results,
-    )
+    if not rows:
+        return None
 
-
-def get_result(session_id: str):
-    """
-    결과 조회
-    """
-    logger.info(
-        "Current Result Store: %s",
-        _results,
-    )
-
-    return _results.get(session_id)
+    # 같은 stage가 여러 번 저장됐다면 created_at 오름차순 순회로 최신값이 남는다.
+    return {row.stage: row.result_json for row in rows}

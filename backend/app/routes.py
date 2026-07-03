@@ -7,7 +7,9 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 
 from core.crawler import crawl_job
+from core.database import SessionLocal
 from core.result_store import get_result
+from models.session import Submission
 from producers.events import (
     publish_coverletter_submitted,
     publish_job_submitted,
@@ -59,6 +61,20 @@ def create_submission(payload: SubmissionCreate):
             status_code=400,
             detail="job_text 또는 job_url 중 하나는 반드시 입력해야 합니다.",
         )
+
+    # analysis_results가 FK로 참조하므로 submissions 행을 먼저 생성한다.
+    with SessionLocal() as db:
+        db.add(
+            Submission(
+                id=submission_id,
+                status="submitted",
+                job_text=job_text,
+                resume_text=payload.resume_text,
+                cover_question=payload.cover_question,
+                cover_draft=payload.cover_draft,
+            )
+        )
+        db.commit()
 
     publish_job_submitted(
         str(submission_id),
