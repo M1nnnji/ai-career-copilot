@@ -14,7 +14,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    # 5174 = docker-compose가 web(5173)을 호스트로 매핑한 포트(브라우저 origin).
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
