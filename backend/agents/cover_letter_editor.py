@@ -11,6 +11,7 @@ from confluent_kafka import Consumer
 
 from core.config import settings
 from core.llm import call_llm_json, load_prompt
+from core.result_store import save_result
 from producers.events import publish_coverletter_done
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,11 @@ def run_consumer():
             logger.exception("Cover Letter Editor failed")
 
 
-def handle_partial(session_id: str, stage: str, data: dict):
+def handle_partial(
+    session_id: str,
+    stage: str,
+    data: dict,
+):
     store = _join_store.setdefault(session_id, {})
     store[stage] = data
 
@@ -89,6 +94,17 @@ def handle_partial(session_id: str, stage: str, data: dict):
         session_id,
         store["fit"],
         store["coverletter"],
+    )
+
+    logger.info("Saving result...")
+
+    save_result(
+        session_id,
+        "result",
+        {
+            "fit": store["fit"],
+            "coverletter": result,
+        },
     )
 
     publish_coverletter_done(
@@ -110,8 +126,11 @@ def handle_joined(
 Fit Analysis:
 {fit_data}
 
+Question:
+{cover_data.get("question", "")}
+
 Cover Letter:
-{cover_data.get("coverletter_text", "")}
+{cover_data.get("draft", "")}
 """
 
     result = call_llm_json(

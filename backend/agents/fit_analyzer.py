@@ -15,10 +15,13 @@ from producers.events import publish_fit_analyzed
 
 logger = logging.getLogger(__name__)
 
-INPUT_TOPICS = ["job.analyzed", "resume.analyzed"]
+INPUT_TOPICS = [
+    "job.analyzed",
+    "resume.analyzed",
+]
+
 OUTPUT_TOPIC = "fit.analyzed"
 
-# session_id별 임시 저장
 _join_store: Dict[str, dict] = {}
 
 
@@ -47,6 +50,9 @@ def run_consumer():
 
         payload = json.loads(msg.value().decode())
 
+        logger.info(msg.topic())
+        logger.info("payload: %s", payload)
+        
         try:
             topic = msg.topic()
 
@@ -70,28 +76,41 @@ def run_consumer():
             logger.exception("Fit Analyzer failed")
 
 
-def handle_partial(session_id: str, stage: str, data: dict):
+def handle_partial(
+    session_id: str,
+    stage: str,
+    data: dict,
+):
     store = _join_store.setdefault(session_id, {})
     store[stage] = data
 
-    if "job" in store and "resume" in store:
-        logger.info("Both results ready: %s", session_id)
+    if "job" not in store:
+        return
 
-        result = handle_joined(
-            session_id,
-            store["job"],
-            store["resume"],
-        )
+    if "resume" not in store:
+        return
 
-        publish_fit_analyzed(
-            session_id,
-            result,
-        )
+    logger.info("Both results ready: %s", session_id)
 
-        del _join_store[session_id]
+    result = handle_joined(
+        session_id,
+        store["job"],
+        store["resume"],
+    )
+
+    publish_fit_analyzed(
+        session_id,
+        result,
+    )
+
+    del _join_store[session_id]
 
 
-def handle_joined(session_id: str, job_data: dict, resume_data: dict) -> dict:
+def handle_joined(
+    session_id: str,
+    job_data: dict,
+    resume_data: dict,
+) -> dict:
     prompt = load_prompt("fit_analyzer")
 
     user_message = f"""

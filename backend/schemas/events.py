@@ -54,7 +54,8 @@ class CoverLetterDoneResult(BaseModel):
 # --- HTTP API ---
 
 class SubmissionCreate(BaseModel):
-    job_text: str
+    job_text: Optional[str] = None
+    job_url: Optional[str] = None
     resume_text: str
     cover_question: str
     cover_draft: str

@@ -1,5 +1,6 @@
 """
-Job Analyzer 에이전트 — job.submitted 구독 → job.analyzed 발행.
+Job Analyzer 에이전트
+job.submitted 구독 → job.analyzed 발행
 """
 
 import json
@@ -40,9 +41,9 @@ def run_consumer():
             logger.error(msg.error())
             continue
 
-        payload = json.loads(msg.value().decode())
-
         try:
+            payload = json.loads(msg.value().decode())
+
             result = handle_message(payload)
 
             publish_job_analyzed(
