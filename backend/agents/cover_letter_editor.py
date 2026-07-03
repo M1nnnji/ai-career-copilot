@@ -1,11 +1,15 @@
 """
 Cover Letter Editor 에이전트
-coverletter.submitted + fit.analyzed → coverletter.done
+coverletter.submitted + job.analyzed (+ fit.analyzed, 이력서 있을 때만)
+→ 문항별 첨삭 → coverletter.done
+
+이력서가 없으면 fit.analyzed는 오지 않으므로, coverletter.submitted의
+has_resume 플래그로 무엇을 기다릴지 판단한다.
 """
 
 import json
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 from confluent_kafka import Consumer
 
@@ -18,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 INPUT_TOPICS = [
     "coverletter.submitted",
+    "job.analyzed",
     "fit.analyzed",
 ]
 
@@ -53,20 +58,14 @@ def run_consumer():
 
         try:
             session_id = payload["session_id"]
+            topic = msg.topic()
 
-            if msg.topic() == "coverletter.submitted":
-                handle_partial(
-                    session_id,
-                    "coverletter",
-                    payload,
-                )
-
-            elif msg.topic() == "fit.analyzed":
-                handle_partial(
-                    session_id,
-                    "fit",
-                    payload,
-                )
+            if topic == "coverletter.submitted":
+                handle_partial(session_id, "cover", payload)
+            elif topic == "job.analyzed":
+                handle_partial(session_id, "job", payload)
+            elif topic == "fit.analyzed":
+                handle_partial(session_id, "fit", payload)
 
             consumer.commit(msg)
 
@@ -74,56 +73,63 @@ def run_consumer():
             logger.exception("Cover Letter Editor failed")
 
 
-def handle_partial(
-    session_id: str,
-    stage: str,
-    data: dict,
-):
+def _ready(store: dict) -> bool:
+    """첨삭을 시작할 수 있는지 — 자소서와 공고 분석은 필수, 적합도는 이력서 있을 때만."""
+    if "cover" not in store or "job" not in store:
+        return False
+    if store["cover"].get("has_resume") and "fit" not in store:
+        return False
+    return True
+
+
+def handle_partial(session_id: str, stage: str, data: dict):
     store = _join_store.setdefault(session_id, {})
     store[stage] = data
 
-    if "fit" not in store:
+    if not _ready(store):
         return
 
-    if "coverletter" not in store:
-        return
+    logger.info("Ready to edit cover letters: %s", session_id)
 
-    logger.info("Both results ready: %s", session_id)
+    cover = store["cover"]
+    job_data = store["job"]
+    fit_data = store.get("fit")  # 이력서 없으면 None
 
-    result = handle_joined(
-        session_id,
-        store["fit"],
-        store["coverletter"],
-    )
+    results = []
+    for item in cover["cover_letters"]:
+        question = item.get("question", "")
+        draft = item.get("draft", "")
+        edited = handle_one(job_data, fit_data, question, draft)
+        results.append({"question": question, **edited})
 
-    logger.info("Saving result...")
+    logger.info("Saving %d cover letter result(s)...", len(results))
 
-    save_result(session_id, "coverletter", result)
+    save_result(session_id, "coverletter", results)
 
-    publish_coverletter_done(
-        session_id,
-        result,
-    )
+    publish_coverletter_done(session_id, {"coverletters": results})
 
     del _join_store[session_id]
 
 
-def handle_joined(
-    session_id: str,
-    fit_data: dict,
-    cover_data: dict,
+def handle_one(
+    job_data: dict,
+    fit_data: Optional[dict],
+    question: str,
+    draft: str,
 ) -> dict:
     prompt = load_prompt("cover_letter_editor")
 
+    fit_section = f"\nJob Fit Analysis:\n{fit_data}\n" if fit_data else ""
+
     user_message = f"""
-Fit Analysis:
-{fit_data}
-
+Job Requirements:
+{job_data}
+{fit_section}
 Question:
-{cover_data.get("question", "")}
+{question}
 
-Cover Letter:
-{cover_data.get("draft", "")}
+Cover Letter Draft:
+{draft}
 """
 
     result = call_llm_json(
@@ -131,6 +137,6 @@ Cover Letter:
         user_message,
     )
 
-    logger.info("LLM Result: %s", result)
+    logger.info("LLM Result (%s): %s", question, result)
 
     return result

@@ -56,14 +56,15 @@ export default function ResultPage() {
 
       {result.fit && <FitScoreGauge fit={result.fit} />}
 
-      {result.coverletter && (
+      {result.coverletters.map((cl, i) => (
         <CoverLetterDiff
-          original="" // TODO: API에서 원문 반환 또는 별도 필드 추가
-          revised={result.coverletter.revised}
-          issues={result.coverletter.issues}
-          scores={result.coverletter.scores}
+          key={i}
+          question={cl.question}
+          revised={cl.revised}
+          issues={cl.issues}
+          scores={cl.scores}
         />
-      )}
+      ))}
     </div>
   );
 }

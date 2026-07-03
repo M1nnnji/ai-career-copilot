@@ -2,12 +2,16 @@
  * 백엔드 schemas/events.py 와 1:1 대응하는 TypeScript 타입.
  */
 
+export interface CoverLetterInput {
+  question: string;
+  draft: string;
+}
+
 export interface SubmissionCreate {
   job_text?: string;
   job_url?: string;
-  resume_text: string;
-  cover_question: string;
-  cover_draft: string;
+  resume_text?: string; // 선택 — 넣으면 적합도(fit)까지 분석
+  cover_letters: CoverLetterInput[];
 }
 
 export interface SubmissionResponse {
@@ -45,6 +49,7 @@ export interface CoverLetterIssue {
 }
 
 export interface CoverLetterDoneResult {
+  question: string;
   scores: CoverLetterScores;
   issues: CoverLetterIssue[];
   revised: string;
@@ -56,7 +61,7 @@ export interface ResultResponse {
   job?: JobAnalyzedResult;
   resume?: ResumeAnalyzedResult;
   fit?: FitAnalyzedResult;
-  coverletter?: CoverLetterDoneResult;
+  coverletters: CoverLetterDoneResult[];
 }
 
 /** Kafka 파이프라인 단계 — PipelineStatus 컴포넌트용 */

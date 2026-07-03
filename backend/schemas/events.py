@@ -52,6 +52,7 @@ class CoverLetterIssue(BaseModel):
 
 
 class CoverLetterDoneResult(BaseModel):
+    question: str = ""
     scores: CoverLetterScores = Field(default_factory=CoverLetterScores)
     issues: list[CoverLetterIssue] = Field(default_factory=list)
     revised: str = ""
@@ -59,12 +60,16 @@ class CoverLetterDoneResult(BaseModel):
 
 # --- HTTP API ---
 
+class CoverLetterInput(BaseModel):
+    question: str
+    draft: str
+
+
 class SubmissionCreate(BaseModel):
     job_text: Optional[str] = None
     job_url: Optional[str] = None
-    resume_text: str
-    cover_question: str
-    cover_draft: str
+    resume_text: Optional[str] = None  # 선택 — 넣으면 적합도(fit)까지 분석
+    cover_letters: list[CoverLetterInput] = Field(min_length=1)
 
 
 class SubmissionResponse(BaseModel):
@@ -79,4 +84,4 @@ class ResultResponse(BaseModel):
     job: Optional[JobAnalyzedResult] = None
     resume: Optional[ResumeAnalyzedResult] = None
     fit: Optional[FitAnalyzedResult] = None
-    coverletter: Optional[CoverLetterDoneResult] = None
+    coverletters: list[CoverLetterDoneResult] = Field(default_factory=list)

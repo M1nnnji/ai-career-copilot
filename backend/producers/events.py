@@ -55,11 +55,17 @@ def publish_resume_submitted(session_id: str, resume_text: str) -> None:
     publish("resume.submitted", session_id, {"session_id": session_id, "resume_text": resume_text})
 
 
-def publish_coverletter_submitted(session_id: str, question: str, draft: str) -> None:
+def publish_coverletter_submitted(
+    session_id: str, cover_letters: list[dict], has_resume: bool
+) -> None:
     publish(
         "coverletter.submitted",
         session_id,
-        {"session_id": session_id, "question": question, "draft": draft},
+        {
+            "session_id": session_id,
+            "cover_letters": cover_letters,
+            "has_resume": has_resume,
+        },
     )
 
 

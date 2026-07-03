@@ -18,7 +18,7 @@ function stageDone(result: ResultResponse, stage: PipelineStage): boolean {
     case "fit":
       return !!result.fit;
     case "coverletter":
-      return !!result.coverletter;
+      return result.coverletters.length > 0;
   }
 }
 

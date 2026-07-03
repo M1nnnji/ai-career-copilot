@@ -62,6 +62,8 @@ def create_submission(payload: SubmissionCreate):
             detail="job_text 또는 job_url 중 하나는 반드시 입력해야 합니다.",
         )
 
+    has_resume = bool(payload.resume_text and payload.resume_text.strip())
+
     # analysis_results가 FK로 참조하므로 submissions 행을 먼저 생성한다.
     with SessionLocal() as db:
         db.add(
@@ -70,8 +72,6 @@ def create_submission(payload: SubmissionCreate):
                 status="submitted",
                 job_text=job_text,
                 resume_text=payload.resume_text,
-                cover_question=payload.cover_question,
-                cover_draft=payload.cover_draft,
             )
         )
         db.commit()
@@ -81,15 +81,17 @@ def create_submission(payload: SubmissionCreate):
         job_text,
     )
 
-    publish_resume_submitted(
-        str(submission_id),
-        payload.resume_text,
-    )
+    # 이력서는 선택 — 있을 때만 발행(→ resume/fit 단계 진행).
+    if has_resume:
+        publish_resume_submitted(
+            str(submission_id),
+            payload.resume_text,
+        )
 
     publish_coverletter_submitted(
         str(submission_id),
-        payload.cover_question,
-        payload.cover_draft,
+        [cl.model_dump() for cl in payload.cover_letters],
+        has_resume,
     )
 
     return SubmissionResponse(
@@ -116,5 +118,5 @@ def get_results(submission_id: UUID):
         "job": stages.get("job"),
         "resume": stages.get("resume"),
         "fit": stages.get("fit"),
-        "coverletter": stages.get("coverletter"),
+        "coverletters": stages.get("coverletter") or [],
     }

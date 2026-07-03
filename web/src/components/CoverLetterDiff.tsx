@@ -1,19 +1,19 @@
 /**
- * 자소서 첨삭 결과 — 점수 + issues(개선 포인트) + revised 개선안.
+ * 자소서 첨삭 결과(문항 1개) — 문항 + 점수 + issues + revised 개선안.
  */
 import type { CoverLetterIssue, CoverLetterScores } from "../types";
 
 interface Props {
-  original: string;
+  question: string;
   revised: string;
   issues: CoverLetterIssue[];
   scores?: CoverLetterScores;
 }
 
-export default function CoverLetterDiff({ original, revised, issues, scores }: Props) {
+export default function CoverLetterDiff({ question, revised, issues, scores }: Props) {
   return (
-    <section>
-      <h2>자소서 첨삭</h2>
+    <section style={{ borderTop: "2px solid #eee", marginTop: 16, paddingTop: 8 }}>
+      <h2>자소서 첨삭{question ? `: ${question}` : ""}</h2>
 
       {scores && (
         <ul>
@@ -38,13 +38,6 @@ export default function CoverLetterDiff({ original, revised, issues, scores }: P
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {original && (
-        <div>
-          <h3>원문</h3>
-          <p>{original}</p>
         </div>
       )}
 
