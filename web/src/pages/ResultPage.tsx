@@ -116,6 +116,8 @@ export default function ResultPage() {
           revised={cl.revised}
           issues={cl.issues}
           scores={cl.scores}
+          aiScore={cl.ai_score}
+          aiFlags={cl.ai_flags}
         />
       ))}
     </div>

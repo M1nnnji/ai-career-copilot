@@ -51,10 +51,17 @@ class CoverLetterIssue(BaseModel):
     suggestion: str = ""
 
 
+class AiFlag(BaseModel):
+    phrase: str = ""
+    reason: str = ""
+
+
 class CoverLetterDoneResult(BaseModel):
     question: str = ""
     scores: CoverLetterScores = Field(default_factory=CoverLetterScores)
     issues: list[CoverLetterIssue] = Field(default_factory=list)
+    ai_score: int = 0  # AI로 작성된 것처럼 보이는 정도 (0~100)
+    ai_flags: list[AiFlag] = Field(default_factory=list)
     revised: str = ""
 
 

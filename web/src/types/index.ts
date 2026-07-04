@@ -49,10 +49,17 @@ export interface CoverLetterIssue {
   suggestion: string;
 }
 
+export interface AiFlag {
+  phrase: string;
+  reason: string;
+}
+
 export interface CoverLetterDoneResult {
   question: string;
   scores: CoverLetterScores;
   issues: CoverLetterIssue[];
+  ai_score?: number; // AI로 작성된 것처럼 보이는 정도 (0~100)
+  ai_flags?: AiFlag[];
   revised: string;
 }
 
