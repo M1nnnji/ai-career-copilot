@@ -69,9 +69,14 @@ def handle_message(payload: dict) -> dict:
 
     prompt = load_prompt("job_analyzer")
 
+    target_role = (payload.get("target_role") or "").strip()
+    role_line = f"Target role (지원 직무): {target_role}\n\n" if target_role else ""
+
+    user_message = f"{role_line}Job posting:\n{payload['job_text']}"
+
     result = call_llm_json(
         prompt,
-        payload["job_text"],
+        user_message,
     )
 
     logger.info("LLM Result: %s", result)

@@ -10,6 +10,7 @@ export interface CoverLetterInput {
 export interface SubmissionCreate {
   job_text?: string;
   job_url?: string;
+  target_role?: string; // 지원 직무 — 공고에 여러 직무면 이 직무로 초점
   resume_text?: string; // 선택 — 넣으면 적합도(fit)까지 분석
   cover_letters: CoverLetterInput[];
 }

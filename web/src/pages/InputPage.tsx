@@ -10,6 +10,7 @@ export default function InputPage() {
   const navigate = useNavigate();
   const [jobUrl, setJobUrl] = useState("");
   const [jobText, setJobText] = useState("");
+  const [targetRole, setTargetRole] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [coverLetters, setCoverLetters] = useState<CoverLetterInput[]>([
     { question: "", draft: "" },
@@ -50,6 +51,7 @@ export default function InputPage() {
     try {
       const res = await createSubmission({
         ...(jobUrl.trim() ? { job_url: jobUrl.trim() } : { job_text: jobText }),
+        ...(targetRole.trim() ? { target_role: targetRole.trim() } : {}),
         ...(resumeText.trim() ? { resume_text: resumeText } : {}),
         cover_letters: filled,
       });
@@ -72,6 +74,20 @@ export default function InputPage() {
       <form onSubmit={handleSubmit}>
         <div className="card">
           <h2>채용공고 *</h2>
+
+          <label className="field-label">지원 직무</label>
+          <p className="field-hint">
+            공고에 여러 직무가 있으면 꼭 입력하세요. 이 직무 기준으로 분석합니다.
+          </p>
+          <input
+            type="text"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            placeholder="예: 백엔드 개발자, 플랫폼 엔지니어"
+            style={{ marginBottom: 16 }}
+          />
+
+          <label className="field-label">공고 내용</label>
           <input
             type="url"
             value={jobUrl}

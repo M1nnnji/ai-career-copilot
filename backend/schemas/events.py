@@ -68,6 +68,7 @@ class CoverLetterInput(BaseModel):
 class SubmissionCreate(BaseModel):
     job_text: Optional[str] = None
     job_url: Optional[str] = None
+    target_role: Optional[str] = None  # 지원 직무 — 공고에 여러 직무면 이 직무로 초점
     resume_text: Optional[str] = None  # 선택 — 넣으면 적합도(fit)까지 분석
     cover_letters: list[CoverLetterInput] = Field(min_length=1)
 

@@ -79,6 +79,7 @@ def create_submission(payload: SubmissionCreate):
     publish_job_submitted(
         str(submission_id),
         job_text,
+        payload.target_role or "",
     )
 
     # 이력서는 선택 — 있을 때만 발행(→ resume/fit 단계 진행).

@@ -47,8 +47,18 @@ def publish(topic: str, key: str, value: dict[str, Any]) -> None:
 
 # --- 토픽별 편의 함수 ---
 
-def publish_job_submitted(session_id: str, job_text: str) -> None:
-    publish("job.submitted", session_id, {"session_id": session_id, "job_text": job_text})
+def publish_job_submitted(
+    session_id: str, job_text: str, target_role: str = ""
+) -> None:
+    publish(
+        "job.submitted",
+        session_id,
+        {
+            "session_id": session_id,
+            "job_text": job_text,
+            "target_role": target_role,
+        },
+    )
 
 
 def publish_resume_submitted(session_id: str, resume_text: str) -> None:
