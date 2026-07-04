@@ -27,6 +27,23 @@ def test_cover_letter_schema_defaults():
     assert data.issues == []
 
 
+def test_coverage_matches_and_misses():
+    from core.coverage import compute_coverage
+
+    cov = compute_coverage(
+        required_skills=["Python", "PostgreSQL", "REST API 설계"],
+        preferred_skills=["Kubernetes"],
+        text="저는 Python과 FastAPI로 REST API를 설계한 경험이 있습니다.",
+    )
+    covered = {c["skill"]: c["covered"] for c in cov["required"]}
+    assert covered["Python"] is True
+    assert covered["REST API 설계"] is True  # 'REST'/'API' 토큰 매칭
+    assert covered["PostgreSQL"] is False
+    assert cov["required_covered"] == 2
+    assert cov["required_total"] == 3
+    assert cov["preferred"][0]["covered"] is False  # Kubernetes 미언급
+
+
 class _FakeProducer:
     def __init__(self):
         self.captured = {}

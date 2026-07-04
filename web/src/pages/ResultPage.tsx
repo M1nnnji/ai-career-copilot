@@ -8,6 +8,7 @@ import type { ResultResponse } from "../types";
 import FitScoreGauge from "../components/FitScoreGauge";
 import CoverLetterDiff from "../components/CoverLetterDiff";
 import PipelineStatus from "../components/PipelineStatus";
+import CoverageCard from "../components/CoverageCard";
 
 const STATUS_LABEL: Record<string, string> = {
   processing: "분석 중",
@@ -105,6 +106,8 @@ export default function ResultPage() {
       )}
 
       {result.fit && <FitScoreGauge fit={result.fit} />}
+
+      {result.coverage && <CoverageCard coverage={result.coverage} />}
 
       {result.coverletters.map((cl, i) => (
         <CoverLetterDiff

@@ -56,6 +56,20 @@ export interface CoverLetterDoneResult {
   revised: string;
 }
 
+export interface SkillCoverage {
+  skill: string;
+  covered: boolean;
+}
+
+export interface CoverageResult {
+  required: SkillCoverage[];
+  preferred: SkillCoverage[];
+  required_covered: number;
+  required_total: number;
+  preferred_covered: number;
+  preferred_total: number;
+}
+
 export interface SubmissionError {
   stage: string;
   message: string;
@@ -68,6 +82,7 @@ export interface ResultResponse {
   job?: JobAnalyzedResult;
   resume?: ResumeAnalyzedResult;
   fit?: FitAnalyzedResult;
+  coverage?: CoverageResult | null;
   coverletters: CoverLetterDoneResult[];
   error?: SubmissionError | null;
 }

@@ -14,6 +14,7 @@ from typing import Dict, Optional
 from confluent_kafka import Consumer
 
 from core.config import settings
+from core.coverage import compute_coverage
 from core.llm import call_llm_json, load_prompt
 from core.result_store import mark_status, save_error, save_result
 from producers.events import publish_coverletter_done
@@ -108,6 +109,16 @@ def handle_partial(session_id: str, stage: str, data: dict):
     logger.info("Saving %d cover letter result(s)...", len(results))
 
     save_result(session_id, "coverletter", results)
+
+    # 자소서(원문)가 공고의 필수/우대 역량을 얼마나 언급하는지 — ATS 키워드 커버리지.
+    combined_draft = "\n".join(item.get("draft", "") for item in cover["cover_letters"])
+    coverage = compute_coverage(
+        job_data.get("required_skills", []),
+        job_data.get("preferred_skills", []),
+        combined_draft,
+    )
+    save_result(session_id, "coverage", coverage)
+
     mark_status(session_id, "completed")
 
     publish_coverletter_done(session_id, {"coverletters": results})

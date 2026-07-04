@@ -130,6 +130,7 @@ def get_results(submission_id: UUID):
         "job": stages.get("job"),
         "resume": stages.get("resume"),
         "fit": stages.get("fit"),
+        "coverage": stages.get("coverage"),
         "coverletters": stages.get("coverletter") or [],
         "error": stages.get("error"),
     }

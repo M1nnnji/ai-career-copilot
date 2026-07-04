@@ -79,6 +79,20 @@ class SubmissionResponse(BaseModel):
     created_at: datetime
 
 
+class SkillCoverage(BaseModel):
+    skill: str = ""
+    covered: bool = False
+
+
+class CoverageResult(BaseModel):
+    required: list[SkillCoverage] = Field(default_factory=list)
+    preferred: list[SkillCoverage] = Field(default_factory=list)
+    required_covered: int = 0
+    required_total: int = 0
+    preferred_covered: int = 0
+    preferred_total: int = 0
+
+
 class SubmissionError(BaseModel):
     stage: str = ""
     message: str = ""
@@ -91,5 +105,6 @@ class ResultResponse(BaseModel):
     job: Optional[JobAnalyzedResult] = None
     resume: Optional[ResumeAnalyzedResult] = None
     fit: Optional[FitAnalyzedResult] = None
+    coverage: Optional[CoverageResult] = None
     coverletters: list[CoverLetterDoneResult] = Field(default_factory=list)
     error: Optional[SubmissionError] = None

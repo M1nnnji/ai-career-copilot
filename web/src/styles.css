@@ -313,6 +313,10 @@ textarea:disabled {
   background: var(--success-soft);
   color: var(--success);
 }
+.tag.missing {
+  background: #f3f4f6;
+  color: var(--faint);
+}
 
 .issue {
   border-left: 3px solid var(--warn);
