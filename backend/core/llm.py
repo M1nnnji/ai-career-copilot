@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from google import genai
+from google.genai import types
 
 from core.config import settings
 
@@ -61,6 +62,41 @@ USER INPUT
                 attempt + 1,
                 e,
             )
+
+            if attempt == 2:
+                raise
+
+            time.sleep(2)
+
+
+def call_llm_vision(
+    system_prompt: str,
+    image_bytes: bytes,
+    mime_type: str = "image/png",
+) -> str:
+    """
+    Gemini 비전 호출 — 이미지 + 프롬프트 → raw text 반환.
+    이미지 기반 채용공고(JD가 그림 한 장)에서 텍스트를 뽑을 때 사용.
+    같은 모델·같은 API 키를 쓴다 (별도 키 불필요).
+    """
+
+    if not settings.gemini_api_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured.")
+
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    system_prompt,
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                ],
+            )
+
+            return response.text.strip()
+
+        except Exception as e:
+            logger.warning("Gemini vision request failed (%d/3): %s", attempt + 1, e)
 
             if attempt == 2:
                 raise
