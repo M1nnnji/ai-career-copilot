@@ -9,6 +9,12 @@ import FitScoreGauge from "../components/FitScoreGauge";
 import CoverLetterDiff from "../components/CoverLetterDiff";
 import PipelineStatus from "../components/PipelineStatus";
 
+const STATUS_LABEL: Record<string, string> = {
+  processing: "분석 중",
+  completed: "완료",
+  failed: "실패",
+};
+
 export default function ResultPage() {
   const { submissionId } = useParams<{ submissionId: string }>();
   const [result, setResult] = useState<ResultResponse | null>(null);
@@ -20,13 +26,12 @@ export default function ResultPage() {
     let timer: ReturnType<typeof setTimeout>;
     let cancelled = false;
 
-    // completed가 될 때까지 2.5초 간격으로 폴링.
+    // 완료·실패 전까지 2.5초 간격으로 폴링.
     const poll = async () => {
       try {
         const data = await getResults(submissionId);
         if (cancelled) return;
         setResult(data);
-        // 완료·실패 전까지 계속 폴링.
         if (data.status !== "completed" && data.status !== "failed") {
           timer = setTimeout(poll, 2500);
         }
@@ -44,32 +49,60 @@ export default function ResultPage() {
     };
   }, [submissionId]);
 
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (!result) return <p>결과를 불러오는 중...</p>;
+  if (error) {
+    return (
+      <div className="page">
+        <div className="banner error">{error}</div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="page">
+        <div className="loading-wrap">
+          <span className="spinner" /> 결과를 불러오는 중...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <h1>분석 결과</h1>
-      <p>세션 ID: {result.id}</p>
-      <p>상태: {result.status}</p>
+    <div className="page">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 4,
+        }}
+      >
+        <h1 className="page-title" style={{ margin: 0 }}>
+          분석 결과
+        </h1>
+        <span className={`badge ${result.status}`}>
+          {result.status === "processing" && <span className="spinner" />}
+          {STATUS_LABEL[result.status] ?? result.status}
+        </span>
+      </div>
+      <p className="page-lead" style={{ fontSize: 13 }}>
+        세션 {result.id}
+      </p>
 
       {result.status === "failed" && result.error && (
-        <div
-          style={{
-            border: "1px solid #e00",
-            background: "#fee",
-            borderRadius: 6,
-            padding: 12,
-            marginBottom: 12,
-            color: "#900",
-          }}
-        >
+        <div className="banner error">
           <strong>분석 실패 ({result.error.stage} 단계)</strong>
-          <p style={{ margin: "4px 0 0" }}>{result.error.message}</p>
+          <div style={{ marginTop: 4 }}>{result.error.message}</div>
         </div>
       )}
 
       <PipelineStatus status={result.status} result={result} />
+
+      {result.status === "processing" && (
+        <div className="loading-wrap" style={{ margin: "4px 2px 18px" }}>
+          <span className="spinner" /> 분석이 진행 중입니다. 잠시만 기다려 주세요…
+        </div>
+      )}
 
       {result.fit && <FitScoreGauge fit={result.fit} />}
 

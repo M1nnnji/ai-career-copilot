@@ -109,6 +109,11 @@ def get_results(submission_id: UUID):
 
     stages = get_result(str(submission_id)) or {}
 
+    # 이력서 제출 여부 — 프론트가 resume/fit 단계를 '생략'으로 표시할지 판단.
+    with SessionLocal() as db:
+        sub = db.get(Submission, submission_id)
+        resume_provided = bool(sub and sub.resume_text and sub.resume_text.strip())
+
     # error 기록이 있으면 실패, 자소서 첨삭까지 끝나면 완료, 아니면 진행 중.
     if "error" in stages:
         status = "failed"
@@ -120,6 +125,7 @@ def get_results(submission_id: UUID):
     return {
         "id": str(submission_id),
         "status": status,
+        "resume_provided": resume_provided,
         "job": stages.get("job"),
         "resume": stages.get("resume"),
         "fit": stages.get("fit"),

@@ -62,19 +62,22 @@ export default function InputPage() {
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <h1>AI Career Copilot</h1>
-      <p>채용공고 기준으로 자소서를 첨삭해 서류 합격을 돕습니다.</p>
+    <div className="page">
+      <h1 className="page-title">채용공고 기준 자소서 첨삭</h1>
+      <p className="page-lead">
+        공고를 넣으면 요구 역량 기준으로 자소서를 문항별로 첨삭합니다. 이력서를 넣으면
+        적합도 점수까지 분석해요.
+      </p>
 
       <form onSubmit={handleSubmit}>
-        <fieldset>
-          <legend>채용공고 *</legend>
+        <div className="card">
+          <h2>채용공고 *</h2>
           <input
             type="url"
             value={jobUrl}
             onChange={(e) => setJobUrl(e.target.value)}
             placeholder="채용공고 URL (입력 시 자동 크롤링)"
-            style={{ width: "100%", marginBottom: 8 }}
+            style={{ marginBottom: 8 }}
           />
           <textarea
             rows={5}
@@ -83,43 +86,36 @@ export default function InputPage() {
             placeholder="또는 채용공고 텍스트를 직접 붙여넣으세요"
             disabled={!!jobUrl.trim()}
           />
-        </fieldset>
+        </div>
 
-        <fieldset>
-          <legend>이력서 (선택)</legend>
-          <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
-            입력하면 공고 대비 적합도 점수까지 분석합니다.
-          </p>
+        <div className="card">
+          <h2>이력서 (선택)</h2>
+          <p className="field-hint">입력하면 공고 대비 적합도 점수까지 분석합니다.</p>
           <textarea
             rows={5}
             value={resumeText}
             onChange={(e) => setResumeText(e.target.value)}
             placeholder="이력서 텍스트 (선택)"
           />
-        </fieldset>
+        </div>
 
-        <fieldset>
-          <legend>자소서 문항 *</legend>
+        <div className="card">
+          <h2>자소서 문항 *</h2>
           {coverLetters.map((cl, i) => (
-            <div
-              key={i}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 6,
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <div key={i} className="cover-item">
+              <div className="cover-item-head">
                 <input
                   type="text"
                   value={cl.question}
                   onChange={(e) => updateCover(i, "question", e.target.value)}
                   placeholder={`문항 ${i + 1} (예: 지원 동기를 작성하세요)`}
-                  style={{ flex: 1 }}
                 />
                 {coverLetters.length > 1 && (
-                  <button type="button" onClick={() => removeCover(i)}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger-ghost"
+                    onClick={() => removeCover(i)}
+                  >
                     삭제
                   </button>
                 )}
@@ -129,18 +125,17 @@ export default function InputPage() {
                 value={cl.draft}
                 onChange={(e) => updateCover(i, "draft", e.target.value)}
                 placeholder="자소서 초안"
-                style={{ width: "100%" }}
               />
             </div>
           ))}
-          <button type="button" onClick={addCover}>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={addCover}>
             + 문항 추가
           </button>
-        </fieldset>
+        </div>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p className="error-text">{error}</p>}
 
-        <button type="submit" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? "제출 중..." : "분석 시작"}
         </button>
       </form>

@@ -63,6 +63,7 @@ export interface SubmissionError {
 export interface ResultResponse {
   id: string;
   status: string; // processing | completed | failed
+  resume_provided: boolean;
   job?: JobAnalyzedResult;
   resume?: ResumeAnalyzedResult;
   fit?: FitAnalyzedResult;

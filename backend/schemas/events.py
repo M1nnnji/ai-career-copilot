@@ -86,6 +86,7 @@ class SubmissionError(BaseModel):
 class ResultResponse(BaseModel):
     id: UUID
     status: str  # processing | completed | failed
+    resume_provided: bool = False
     job: Optional[JobAnalyzedResult] = None
     resume: Optional[ResumeAnalyzedResult] = None
     fit: Optional[FitAnalyzedResult] = None

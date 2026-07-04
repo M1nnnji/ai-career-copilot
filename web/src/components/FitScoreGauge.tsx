@@ -1,5 +1,5 @@
 /**
- * 적합도 점수 게이지 — fit_score / strengths / gaps 표시.
+ * 적합도 점수 — fit_score 게이지 + strengths / gaps 태그.
  */
 import type { FitAnalyzedResult } from "../types";
 
@@ -8,29 +8,36 @@ interface Props {
 }
 
 export default function FitScoreGauge({ fit }: Props) {
-  // TODO: D6에서 게이지 UI 고도화 (원형 차트 등)
+  const score = Math.max(0, Math.min(100, fit.fit_score));
   return (
-    <section>
+    <div className="card">
       <h2>적합도</h2>
-      <p>
-        <strong>{fit.fit_score}</strong> / 100
-      </p>
-      <div>
-        <h3>강점</h3>
-        <ul>
-          {fit.strengths.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
+
+      <div className="fit-score-big" style={{ marginBottom: 10 }}>
+        {score}
+        <small> / 100</small>
       </div>
-      <div>
-        <h3>부족 역량</h3>
-        <ul>
-          {fit.gaps.map((g) => (
-            <li key={g}>{g}</li>
-          ))}
-        </ul>
+      <div className="score-track" style={{ marginBottom: 18 }}>
+        <div className="score-fill big" style={{ width: `${score}%` }} />
       </div>
-    </section>
+
+      <h3>강점</h3>
+      <ul className="tag-list">
+        {fit.strengths.map((s, i) => (
+          <li key={i} className="tag strength">
+            {s}
+          </li>
+        ))}
+      </ul>
+
+      <h3>부족 역량</h3>
+      <ul className="tag-list">
+        {fit.gaps.map((g, i) => (
+          <li key={i} className="tag gap">
+            {g}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
